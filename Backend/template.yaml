@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  quinnp-resume-aws
+
+  Sample SAM Template for quinnp-resume-aws
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  DemoDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: <Table Name>
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "Stats"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "Stats"
+          KeyType: "HASH"
+
+
+  ViewCountFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: <Table Name>
+      CodeUri: view_count/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Events:
+        ViewCount:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /view_count
+            Method: get
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  ViewCountApi:
+    Description: "API Gateway endpoint URL for Prod stage for View Count function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/view_count/"
+  ViewCountFunction:
+    Description: "View Count Lambda Function ARN"
+    Value: !GetAtt ViewCountFunction.Arn
+  ViewCountFunctionIamRole:
+    Description: "Implicit IAM Role created for View Count function"
+    Value: !GetAtt ViewCountFunctionRole.Arn
